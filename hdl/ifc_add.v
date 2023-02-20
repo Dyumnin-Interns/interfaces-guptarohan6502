@@ -42,7 +42,7 @@
   `define BSV_RESET_EDGE negedge
 `endif
 
-module dut(CLK,
+module ifc_add(CLK,
 	   RST_N,
 
 	   din_value,
@@ -72,7 +72,7 @@ module dut(CLK,
   output din_rdy;
 
   // actionvalue method dout
-  input  dout_en;
+  input dout_en;
   output [7 : 0] dout_value;
   output dout_rdy;
 
@@ -124,7 +124,7 @@ module dut(CLK,
   reg sw_override;
   wire sw_override$D_IN, sw_override$EN;
 
-  // ports of submodule dout_ff
+  // ports of submodule 
   wire [7 : 0] dout_ff$D_IN, dout_ff$D_OUT;
   wire dout_ff$CLR, dout_ff$DEQ, dout_ff$EMPTY_N, dout_ff$ENQ, dout_ff$FULL_N;
 
@@ -212,7 +212,7 @@ module dut(CLK,
   // remaining internal signals
   assign current_count_PLUS_1_EQ_programmed_length___d8 =
 	     next_count__h523 == programmed_length ;
-  assign next_count__h523 = current_count + 8'd1 ;
+  assign next_count__h523 = current_count + 8'b1 ;
   assign x__h969 = { busy, programmed_length, current_count } ;
   always@(cfg_address or programmed_length or x__h969 or sw_override)
   begin
@@ -252,6 +252,7 @@ module dut(CLK,
       if (sw_override$EN)
 	sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
     end
+
 
   // synopsys translate_off
   `ifdef BSV_NO_INITIAL_BLOCKS
