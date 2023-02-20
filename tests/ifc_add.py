@@ -16,8 +16,8 @@ def sb_fn(actual_value):
 	global expected_value
 	#Convert actual value to decimal
 	logger.info(f"Actual value is {int(actual_value)}")
-	#logger.info(f"Expected value is {expected_value.pop(0)}")
-	#assert actual_value == expected_value.pop(0), "Scoreboard Matching Failed"
+	logger.info(f"Expected value is {expected_value[0]}")
+	assert actual_value == expected_value.pop(0), "Scoreboard Matching Failed"
 
 def sb_cfg_fn(actual_value):
 	global expected_value
@@ -64,8 +64,8 @@ async def ifc_add(dut):
 	op_val = [1]
 	
 	#list of lists of random numbers 4,5,6,7 in length such that sum of numbers in list is less than 256
-	# lis_l = [[random.randint(0,25) for i in range(random.randint(4,7))] for j in range(10)]
-	lis_l = [[2, 1, 23, 24], [16, 9, 10, 24, 11]]
+	lis_l = [[random.randint(0,25) for i in range(random.randint(4,7))] for j in range(10)]
+	#lis_l = [[2, 1, 23, 24], [16, 9, 10, 24, 11]]
 	print(lis_l)
 	for list_n in range(len(lis_l)):
 		L_n = lis_l[list_n]

@@ -195,7 +195,11 @@ module ifc_add(CLK,
 	     cfg_en && cfg_op && cfg_address == 8'd8 && sw_override ;
 
   // register sum
+  //assign sum$D_IN = sum + din_value ;
+ 
   assign sum$D_IN = sum + din_value ;
+  
+  
   assign sum$EN = din_en && !current_count_PLUS_1_EQ_programmed_length___d8 ;
 
   // register sw_override
@@ -253,6 +257,11 @@ module ifc_add(CLK,
 	sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
     end
 
+  always@(negedge busy)
+  begin
+      current_count <= `BSV_ASSIGNMENT_DELAY 8'd0;
+      sum <= `BSV_ASSIGNMENT_DELAY 8'd0;
+  end
 
   // synopsys translate_off
   `ifdef BSV_NO_INITIAL_BLOCKS
