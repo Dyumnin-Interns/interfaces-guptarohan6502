@@ -253,10 +253,13 @@ module ifc_add(CLK,
       if (programmed_length$EN)
 	programmed_length <= `BSV_ASSIGNMENT_DELAY programmed_length$D_IN;
       if (sum$EN) sum <= `BSV_ASSIGNMENT_DELAY sum$D_IN;
-      if (sw_override$EN)
-	sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
+//       if (sw_override$EN)
+// sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
     end
-
+  always@(posedge sw_override$EN )
+     begin
+    sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
+     end
   always@(negedge busy)
   begin
       current_count <= `BSV_ASSIGNMENT_DELAY 8'd0;

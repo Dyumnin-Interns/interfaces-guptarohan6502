@@ -3,9 +3,29 @@ from cocotb.triggers import Timer, RisingEdge, ReadOnly, NextTimeStep, FallingEd
 from cocotb_bus.drivers import BusDriver
 from cocotb_coverage.coverage import CoverCross, CoverPoint, coverage_db
 from cocotb_bus.monitors import BusMonitor
+from cocotb_coverage.coverage import  CoverCross, CoverPoint, coverage_db
+from cocotb_bus.monitors import BusMonitor
+
 import os
 import random
 import logging
+
+@CoverPoint("top.p",  # noqa F405
+            xf=lambda x, y: x,
+            bins=[0, 1]
+            )
+@CoverPoint("top.r",  # noqa F405
+            xf=lambda x, y: y,
+            bins=[0, 1]
+            )
+@CoverCross("top.cross.pr",
+            items=["top.p",
+                   "top.r"
+                   ]
+            )
+def pr_cover(p,r):
+	print(p,r)
+	pass
 
 logging.basicConfig(level=logging.DEBUG)
 global logger
@@ -16,8 +36,8 @@ def sb_fn(actual_value):
 	global expected_value
 	#Convert actual value to decimal
 	logger.info(f"Actual value is {int(actual_value)}")
-	logger.info(f"Expected value is {expected_value.pop(0)}")
-	#assert actual_value == expected_value.pop(0), "Scoreboard Matching Failed"
+	logger.info(f"Expected value is {expected_value[0]}")
+	assert actual_value == expected_value.pop(0) , "Scoreboard Matching Failed"
 
 def sb_cfg_fn(actual_value):
 	pass
@@ -45,7 +65,20 @@ async def detect_signal_change(dut, signal):
         event.clear()
         await RisingEdge(dut.clock)
 
-
+@CoverPoint("top.prot.din.current", # noqa F405
+		xf = lambda x: x['current'],
+		bins = ['IDLE','READY','TXN']
+		)
+@CoverPoint("top.prot.din.previous", # noqa F405
+		xf = lambda x: x['previous'],
+		bins = ['IDLE','READY','TXN']
+		)
+@CoverCross("top.cross.din_prot.cross", # noqa F405
+		items = ["top.prot.din.previous", "top.prot.din.current"],
+		ign_bins = [('READY', 'IDLE')]
+		)
+def din_prot_cover(txn):
+	pass
 
 @cocotb.test()
 async def ifc_add(dut):
@@ -66,53 +99,45 @@ async def ifc_add(dut):
 	await RisingEdge(dut.CLK)
 	#Till here we have reset the DUT and now we start sending signals
 	
-	In_drv = InputDriver(dut, 'din', dut.CLK)
+	In_drv = InputDriver(dut, 'din', dut.CLK,dut.cfg_en, dut.len_en)
 	OutputDriver(dut, 'dout', dut.CLK, sb_fn)
 	Len_drv = InputDriver(dut, 'len', dut.CLK)
 	cfg_indrv = Cfg_InDriver(dut, 'cfg', dut.CLK)
 	#cfg_outdrv = Cfg_OutDriver(dut, 'cfg', dut.CLK, sb_cfg_fn)
 
+	IO_Monitor(dut, 'din', dut.CLK,callback = din_prot_cover)
+	# Out_mon = IO_Monitor(dut, 'dout', dut.CLK)
+	# Len_mon = IO_Monitor(dut, 'len', dut.CLK)
+	# cfg_mon = IO_Monitor(dut, 'cfg', dut.CLK)
+
+
 	#list of lists of random numbers 4,5,6,7 in length such that sum of numbers in list is less than 256
-	lis_l = [[random.randint(0,10) for i in range(random.randint(4,7))] for j in range(5)]
+	lis_l = [[random.randint(0,50) for i in range(random.randint(4,7))] for j in range(100)]
 	#list defines whether to have operation from the port or register
-	port_reg = [random.randint(0,1) for i in range(5)]#
-	#lis_l = [[2, 1, 23, 24], [16, 9, 10, 24, 11]]
-	#port_reg = [0,1]
+	port_reg = [random.randint(0,1) for i in range(100)]
+	# lis_l = [[2, 1, 23, 24], [16, 9, 10, 24, 11]]
+	# port_reg = [1,0]
 	print(lis_l, port_reg)
 
+	
+	prev_sw = None
 	for list_n in range(len(lis_l)):
+
+		
 		L_n = lis_l[list_n]
 		print(L_n)
 		print(port_reg[0])
-
-		# if dut.cfg_rdy.value != 1:
-		# 	await RisingEdge(dut.cfg_rdy)
-		# await FallingEdge(dut.CLK)
-		# dut.cfg_en.value = 1
-		# dut.cfg_address.value = 4
-		# dut.cfg_op.value = 1
-		# await FallingEdge(dut.CLK)
-		# dut.cfg_data_in.value = port_reg[0]
-
+		current_sw = port_reg[0]
+		
 		cfg_indrv.append((4, port_reg[0]))
-		await ClockCycles(dut.CLK, 1)
+		await RisingEdge(dut.CLK)
 		if(port_reg.pop(0) == 0):
 			Len_drv.append(len(L_n))
 		else:
 			cfg_indrv.append((8,len(L_n)))
-	
-		#find a way to check data_out values
-		await FallingEdge(dut.CLK)
-
-		# dut.cfg_en.value = 1
-		# dut.cfg_address.value = 0
-		# dut.cfg_op.value = 0
-		# await FallingEdge(dut.CLK)
-		# print(f"cfg_address is {get_int(dut.cfg_address)}")
-		# print(f"cfg_en is {get_int(dut.cfg_en)}")
-		# print(f"cfg_data_out is {(get_int(dut.cfg_data_out)>>8) & 0xF}")
-		# assert ((get_int(dut.cfg_data_out)>>8) & 0xF) == len(L_n), "Length is not matching"
-		#Giving Input Values
+		if(prev_sw!= None):
+			#print(prev_sw, current_sw)
+			pr_cover(prev_sw, current_sw)
 
 		sum = 0
 		for i in range(len(L_n)):
@@ -120,28 +145,77 @@ async def ifc_add(dut):
 		assert sum <= 2**8, "Sum of the list is greater than 8 bits"
 		expected_value.append(sum)
 
+
 		for i in range(len(L_n)):
-			sum+=L_n[i]
 			In_drv.append(L_n[i])
 			await FallingEdge(dut.CLK)
-		await FallingEdge(dut.CLK)
+		
+		prev_sw = current_sw
+		await FallingEdge(dut.dout_en)
+
 
 	while len(expected_value) > 0:
 		await Timer(2, 'ns')
 
+	coverage_db.report_coverage(cocotb.log.info, bins = True)
+	coverage_file = os.path.join(os.path.dirname(__file__), "coverage.xml")
+	coverage_db.export_to_xml(filename = coverage_file)
 
+class IO_Monitor(BusMonitor):
+	_signals = ['rdy', 'en', 'value']
+
+	async def _monitor_recv(self):
+		fallingedge = FallingEdge(self.clock)
+		rdonly = ReadOnly()
+		phases = {
+			0: 'IDLE',
+			1: 'READY',
+			3: 'TXN',
+		}
+		prev= 'IDLE'
+		while True:
+			await fallingedge
+			await rdonly
+			txn  = (self.bus.en.value <<1) | self.bus.rdy.value
+			#logger.info(f"txn = {txn}")
+			self._recv({'previous': prev, 'current': phases[txn]})
+			prev = phases[txn]
+			
+# class IO_Monitor(BusMonitor):
+#     _signals = ['rdy', 'en', 'data']
+
+#     async def _monitor_recv(self):
+#         fallingedge = FallingEdge(self.clock)
+#         rdonly = ReadOnly()
+#         phases = {
+#             0: 'Idle',
+#             1: 'Rdy',
+#             3: 'Txn'
+#         }
+#         prev = 'Idle'
+#         while True:
+#             await fallingedge
+#             await rdonly
+#             txn = (self.bus.en.value << 1) | self.bus.rdy.value
+#             self._recv({'previous': prev, 'current': phases[txn]})
+#             prev = phases[txn]
 
 class InputDriver(BusDriver):
 	_signals = ['rdy', 'en', 'value']
 
-	def __init__(self, dut, name, clk):
+	def __init__(self, dut, name, clk,cfg_en = None,len_en = None):
 		BusDriver.__init__(self, dut, name, clk)
 		self.bus.en.value = 0
 		self.clk = clk
+		self.cfg_en = cfg_en
+		self.len_en = len_en
 
 	async def _driver_send(self, value, sync=True):
 		if self.bus.rdy.value != 1:
 			await RisingEdge(self.bus.rdy)
+		if(self.cfg_en!=None and self.len_en!=None):
+			while(self.cfg_en.value ==1 or self.len_en.value == 1):
+				await FallingEdge(self.clk)
 		self.bus.en.value = 1
 		self.bus.value.value = value
 		await ReadOnly()
