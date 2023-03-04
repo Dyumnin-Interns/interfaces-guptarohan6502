@@ -1,5 +1,5 @@
 <testsuites name="results">
   <testsuite name="all" package="all">
-    <property name="random_seed" value="1677501311" />
+    <property name="random_seed" value="1677926847" />
   </testsuite>
 </testsuites>

@@ -36,6 +36,7 @@ def sb_fn(actual_value):
 	global expected_value
 	#Convert actual value to decimal
 	logger.info(f"Actual value is {int(actual_value)}")
+	#logger.info(f"Expected value is {expected_value.pop(0)}")
 	logger.info(f"Expected value is {expected_value[0]}")
 	assert actual_value == expected_value.pop(0) , "Scoreboard Matching Failed"
 
@@ -111,12 +112,29 @@ async def ifc_add(dut):
 	# cfg_mon = IO_Monitor(dut, 'cfg', dut.CLK)
 
 
-	#list of lists of random numbers 4,5,6,7 in length such that sum of numbers in list is less than 256
-	lis_l = [[random.randint(0,50) for i in range(random.randint(4,7))] for j in range(100)]
+	#DC1 
+	#list of 100 0s
+	#lis_l = [[0 for i in range(random.randint(2,255))] for j in range(100)]
+
+	#DC2
+	#list of 255s
+	#lis_l = [[255 for i in range(random.randint(2,255))] for j in range(100)]
+
+	#DC3 
+	#list of 1s
+	lis_l = [[1 for i in range(random.randint(2,255))] for j in range(100)]
+
+	#RC1
+	#list of random numbers
+	#lis_l = [[random.randint(0,255) for i in range(random.randint(2,255))] for j in range(100)]
+
+
 	#list defines whether to have operation from the port or register
-	port_reg = [random.randint(0,1) for i in range(100)]
+	port_reg = [random.randint(0,1) for i in range(len(lis_l))]
+
 	# lis_l = [[2, 1, 23, 24], [16, 9, 10, 24, 11]]
 	# port_reg = [1,0]
+
 	print(lis_l, port_reg)
 
 	
@@ -125,7 +143,7 @@ async def ifc_add(dut):
 
 		
 		L_n = lis_l[list_n]
-		print(L_n)
+		print(len(L_n))
 		print(port_reg[0])
 		current_sw = port_reg[0]
 		
@@ -142,8 +160,7 @@ async def ifc_add(dut):
 		sum = 0
 		for i in range(len(L_n)):
 			sum+=L_n[i]
-		assert sum <= 2**8, "Sum of the list is greater than 8 bits"
-		expected_value.append(sum)
+		expected_value.append(sum%256)
 
 
 		for i in range(len(L_n)):
@@ -267,6 +284,7 @@ class Cfg_InDriver(BusDriver):
 				self.bus.data_in.value = value[1] & 0b11
 			elif(value[0] == 8):
 				#logger.info(f"Writing {value[1] & 0xFF} to the register")
+				await FallingEdge(self.clk)
 				self.bus.data_in.value = value[1] & 0xFF
 			await RisingEdge(self.clk)
 			self.bus.en.value = 0

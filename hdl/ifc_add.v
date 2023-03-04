@@ -256,6 +256,7 @@ module ifc_add(CLK,
 //       if (sw_override$EN)
 // sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
     end
+    
   always@(posedge sw_override$EN )
      begin
     sw_override <= `BSV_ASSIGNMENT_DELAY sw_override$D_IN;
