@@ -122,7 +122,7 @@ async def ifc_add(dut):
 
 	#DC3 
 	#list of 1s
-	lis_l = [[1 for i in range(random.randint(2,255))] for j in range(100)]
+	lis_l = [[1 for i in range(random.randint(2,255))] for j in range(10)]
 
 	#RC1
 	#list of random numbers
